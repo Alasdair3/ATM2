@@ -1,695 +1,826 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<time.h>
-#include<windows.h>
-#include<conio.h>
-
-struct Transaction
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+typedef struct
 {
-	char username[100];
-	time_t timestamp;//时间戳 
-	int type;//交易类型 0-取钱，1-存钱
-	float amount;//数额 
-
-	struct Transaction* next;
-};
-typedef struct Transaction TR;
-
-//交易记录信息链表 
-TR* tHead = NULL;
-TR* tTail = NULL;
-TR* Tr = NULL;
-
-
-struct Account
-{
-	char password[7];
-	char username[19];
-	float money;
-	struct Account* next;
-};
-typedef struct Account Account;
-
-int language;
-Account a;
-
-typedef struct Account Account;
-
-Account* head = NULL;//指向头结点 
-Account* tail = NULL;//指向尾结点 
-Account* curAccount = NULL;//记录当前账户 
-void homePage();
-void transfer();
-void esc();
-void saveData();
-void date() 
-{//显示当前日期
-	printf("当前日期：");
-	system("date/t");
-	printf("当前时间：");
-	system("time/t");
-
-}
-//加载成功返回1，否则返回0 
-void loadData()
-{
-	FILE* fp = fopen("D:/demo2/atm.txt", "r");
-	if (fp != NULL)
-	{
-		while (!feof(fp))
-		{
-			//创建结点
-			Account* newNode = (Account*)malloc(sizeof(Account));
-			if (newNode == NULL) 
-			{
-				exit(-1);
-			}//判断malloc申请空间是否成功，消除警告
-
-			//结点初始化
-			newNode->next = NULL;
-			fscanf_s(fp, "%s %s %f\n", newNode->username,19, newNode->password, 7, &newNode->money);
-
-			//添加结点到链表
-			if (head == NULL)
-			{
-				head = newNode;
-				tail = newNode;
-			}
-			else
-			{
-				tail->next = newNode;
-				tail = newNode;
-			}
-		}
-		fclose(fp);
-	}
-}
-
-void loadDataTR()
-{
-	FILE* fp = fopen("D:/demo2/Tatm.txt", "r");
-	if (fp != NULL)
-	{
-		while (!feof(fp))
-		{
-			//创建结点
-			TR* Node = (TR*)malloc(sizeof(TR));
-			if (Node == NULL)
-			{
-				exit(-1);
-			}//判断malloc申请空间是否成功，消除警告
-
-			//结点初始化
-			Node->next = NULL;
-			fscanf_s(fp, "%s %d %f\n", Node->username, 19, & Node->type, &Node->amount);
-
-			//添加结点到链表
-			if (tHead == NULL)
-			{
-				tHead = Node;
-				tTail = Node;
-			}
-			else
-			{
-				tTail->next = Node;
-				tTail =Node;
-			}
-		}
-		fclose(fp);
-	}
-}
-
-
-
-
-void saveTR()
-{
-	FILE* fp = fopen("D:/demo2/Tatm.txt", "w");
-	TR* curP = tHead;
-	while (curP != NULL)
-	{
-		fprintf(fp, "%s\t\t%d\t %f\n", curP->username,curP->type, curP->amount);
-		curP = curP->next;
-	}
-	fclose(fp);
-}
-
-void findeTR(Account *a)
-{
-	TR* curP = tHead;
-	system("cls");
-	date();
-	printf("\n\n\n");
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	交易记录>1	返回菜单>2	||\n");
-	printf("\t\t||	        		退出>3	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	int n;
-	scanf_s("%d", &n);
-	switch (n)
-	{
-	case 1:
-			while (curP != NULL)
-			{
-				if (strcmp(curP->username, a->username) == 0)
-				{
-					printf("%s\t\t%d\t%f\t", curP->username,curP->type, curP->amount);
-					system("date/t");
-				}
-				curP = curP->next;
-			}
-			system("pause");
-	case 2:homePage(); break;
-	default:
-		break;
-	}
+	int num;          //账户
+	char name[50];   //姓名
+	int password;   //密码
+	double cash;    //余额
+	int type;       //状态
 	
-}
+}Account;
 
-void drawMoney()
-{
-	system("cls");
-	date();
-	printf("\n\n\n");
-	printf("**********************************************************************\n");
-	printf("*                           请整百取款                               *\n");
-	printf("**********************************************************************\n\n\n");
+void kaihu(Account *arr);      //开户
 
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	取款>1		返回菜单>2	||\n");
-	printf("\t\t||	        		退出>3	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	int n;
-	scanf_s("%d",&n);
+void cunkuan(Account *arr);    //存款
 
-	switch (n)
-	{
-	case 1:
-			printf("\t\t请输入取款金额：");
-			float money;
-			while (1)
-			{
-				scanf_s("%f", &money);
-				if (((int)money % 100) != 0)
-					printf("\n\t\t请整百取款，重新输入：\n");
-				else
-					break;
+void qukuan(Account *arr);     //取款
 
-			}
-			
+void find(Account *arr);       //查询
 
-			//验证金额
-			if (curAccount->money >= money)
-			{
-				printf("\t\t取款成功！\n");
-				curAccount->money -= money;
+void zhuanzhang(Account *arr); //转账
 
-				//产生交易记录...	
-				TR* newNode = (TR*)malloc(sizeof(TR));
-				if (newNode == NULL)
-				{
-					exit(-1);
-				}//判断malloc申请空间是否成功，消除警告
-				newNode->next = NULL;
-				strcpy(newNode->username, curAccount->username);
-				newNode->type = 0 ;
-				newNode->amount = money;
-				newNode->timestamp = time(NULL);
+void guashi(Account *arr);     //挂失
 
-				
-				//结点初始化
+void jiegua(Account *arr);     //解挂
 
-				//添加结点到链表
-				if (tHead == NULL)
-				{
-					tHead = newNode;
-					tTail = newNode;
-				}
-				else
-				{
-					tTail->next = newNode;
-					tTail = newNode;
-				}
-				
-			}
-			else
-			{
-				printf("\t\t余额不足！\n");
-			}
-			saveTR();
-			saveData();
-			system("pause");
-	case 2: homePage(); break;
-	case 3: esc();
-	default:
-		break;
-	}
-	
-}
+void xiaohu(Account *arr);     //销户
 
-void transfer() {
-	system("cls");
-	date();
-	printf("\n\n\n");
-	FILE* fp = fopen("D:/demo2/atm.txt", "r+");
-	if (fp == NULL)	//无该条件判断将会出现警告Warning C6387
-		exit(-1);
-	float money;
-	char id[9] = {"\0"};
-	Account* curp=head;
-	
+void gaimi(Account *arr);      //改密
 
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	转账>1		返回菜单>2	||\n");
-	printf("\t\t||	        		退出>3	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	int n;
-	scanf_s("%d",&n);
-	system("cls");
-	switch (n)
-	{
-	case 1:
-		printf("\n\n\t\t请输入转账人的用户名：");
-		scanf_s("%s", &id, 9);
-		while (curp != NULL)
-		{
-
-
-			if (strcmp(id, curp->username) == 0)
-			{
-				printf("\n\n\t\t请输入要转账的金额：");
-				scanf_s("%f", &money);
-				if (curAccount->money >= money)
-				{
-					printf("\n\n\t\t请确认数目：%f\n", money);
-					system("pause");
-					curp->money += money;
-					curAccount->money -= money;
-					printf("\n\n\n转账成功!\n");
-					fprintf(fp, "%s\t%s\t%f\n", curAccount->username, curAccount->password, curAccount->money);
-
-
-					//创建结点
-					TR* newNode = (TR*)malloc(sizeof(TR));
-					if (newNode == NULL)
-					{
-						exit(-1);
-					}//判断malloc申请空间是否成功，消除警告
-					//结点初始化
-					newNode->next = NULL;
-					strcpy(newNode->username, curAccount->username);
-					newNode->timestamp = time(NULL);
-					newNode->type = 0;
-					newNode->amount = money;
-
-					//添加结点到链表
-					if (tHead == NULL)
-					{
-						tHead = newNode;
-						tTail = newNode;
-					}
-					else
-					{
-						tTail->next = newNode;
-						tTail = newNode;
-					}
-
-				}
-				else
-				{
-					printf("\t\t余额不足！\n\n\n");
-					system("pause");
-					transfer();
-				}
-
-
-				fclose(fp);
-			}
-			curp = curp->next;
-
-		}
-		saveTR();
-		saveData();
-		system("pause");
-	case 2:homePage();
-	case 3:esc();
-	default:
-		break;
-	}
-	
-	
-	
-}
-
-
-void saveMoney()
-{
-	system("cls");
-	date();
-	printf("\n\n\n");
-	
-	printf("**********************************************************************\n");
-	printf("*                           请整百存款                               *\n");
-	printf("**********************************************************************\n\n\n");
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	存款>1		返回菜单>2	||\n");
-	printf("\t\t||	        		退出>3	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	int n;
-	scanf_s("%d", &n);
-	switch (n)
-	{
-	case 1:
-			printf("\t\t请输入存款金额：");
-			float money;
-			while (1)
-			{
-				scanf_s("%f", &money);
-				if (((int)money % 100) != 0)
-					printf("\t\t请整百存款，重新输入：\n\n\n");
-				else
-					break;
-
-			}
-			printf("\t\t存款成功！\n\n\n");
-			curAccount->money += money;
-
-						//产生交易记录...	
-			TR* newNode = (TR*)malloc(sizeof(TR));
-			if (newNode == NULL)
-			{
-				exit(-1);
-			}//判断malloc申请空间是否成功，消除警告
-			newNode->next = NULL;
-			strcpy(newNode->username, curAccount->username);
-			newNode->type = 1;
-			newNode->amount = money;
-			newNode->timestamp = time(NULL);
-
-			//结点初始化
-
-			//添加结点到链表
-			if (tHead == NULL)
-			{
-				tHead = newNode;
-				tTail = newNode;
-			}
-			else
-			{
-				tTail->next = newNode;
-				tTail = newNode;
-			}
-			saveTR();
-			saveData();
-			system("pause");
-
-	case 2: homePage(); break;
-	case 3: esc();
-	default:
-		break;
-	}
-	
-}
-
-void esc()
-{
-	void saveData();
-	saveData();
-	exit(0);
-}
-
-void enquiryService()
-{
-	system("cls");
-	date();
-	printf("\n\n\n");
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	余额查询>1	返回菜单>2	||\n");
-	printf("\t\t||	        		退出>3	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	
-	int n;
-	scanf_s("%d", &n);
-	switch (n)
-	{
-	case 1:printf("%s\t\t%f\t\n", curAccount->username,  curAccount->money);
-		   system("pause");
-	case 2:homePage(); break;
-	case 3:esc();
-	default:
-		break;
-	}
-	
-
-}
-
-void printLinkedList()
-{
-	Account* curP = head;
-	while (curP != NULL)
-	{
-		printf("%s\t%s\t%f\t\n", curP->username, curP->password,  curP->money);
-		curP = curP->next;
-	}
-}
-
-
-
-void signUp()
-{
-	void showMenu();
-	system("cls");
-	date();
-	printf("\n\n\n");
-	Account* newNode = (Account*)malloc(sizeof(Account));
-	if (newNode == NULL)
-	{
-		exit(-1);
-	}//判断malloc申请空间是否成功，消除警告
-	newNode->next = NULL;
-	printf("\t\t请输入账号：\n");
-	scanf_s("%s", newNode->username,19);
-
-	printf("\t\t请输入密码：\n");
-	scanf_s("%s", newNode->password,7);
-	newNode->money = 0.0;
-	tail->next = newNode;
-	tail = newNode;
-	printf("\t\t注册成功！\n");
-	saveData();
-	showMenu();
-
-}
-
-
-//找到返回1，否则返回0 
-int findAccount(Account a)
-{
-	Account* curp = head;
-	
-	while (curp != NULL)
-	{
-		if ((strcmp(curp->username, a.username) == 0) && (strcmp(curp->password, a.password) == 0))
-		{
-			curAccount = curp;
-		
-			return 1;
-		}
-		curp = curp->next;
-	}
-	return 0;
-}
-void updatePassword()
-{
-
-	system("cls");
-	date();
-	printf("\n\n\n");
-	printf("**********************************************************************\n");
-	printf("*           请输入原密码与新密码，新密码不能与原密码相同！           *\n");
-	printf("**********************************************************************\n\n\n");
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	更改密码>1	返回菜单>2	||\n");
-	printf("\t\t||	        		退出>3	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	
-	int n;
-	scanf_s("%d", &n);
-	switch (n)
-	{
-	case 1:
-			printf("\t\t请输入旧密码：");
-			char oldPassword[7] = { "\0" };
-			scanf_s("%s", oldPassword, 7);
-			if (strcmp(oldPassword, curAccount->password) == 0)
-			{
-				printf("\t\t请输入新密码：");
-				while (1)
-				{
-					scanf_s("%s", curAccount->password, 7);
-					if (strcmp(oldPassword, curAccount->password) == 0)
-					{
-						printf("\t\t新旧密码不能一样!\n");
-						printf("\t\t重新输入!\n");
-					}
-					else
-						break;
-				}
-				printf("\t\t修改成功！\n");
-
-			}
-			else
-			{
-				printf("\t\t密码错误！不能修改！\n");
-			}
-			system("pause");
-			saveData();
-	case 2:	homePage(); break;
-	case 3: esc();
-	default:
-		break;
-	}
-	
-
-}
-
-
-void signIn()
-{
-	system("cls");
-	date();
-	printf("\n\n\n");
-	printf("**********************************************************************\n");
-	printf("*请输入正确的账号与密码，当日三次错误输入后将无法使用，请次日再尝试！*\n");
-	printf("**********************************************************************\n\n\n");
-	int i;
-	for (i = 0; i < 3; i++)
-	{
-		Account a;
-		printf("\t\t\t请输入账号：");
-		scanf_s("%s", a.username,19);
-
-		printf("\t\t\t请输入密码：");
-		scanf_s("%s", a.password,7);
-
-		if (findAccount(a))
-		{
-			printf("\t\t\t登录成功！\n");
-			homePage();
-		}
-		else
-		{
-			printf("\t\t\t登录失败！\n");
-		}
-	}
-	Account* node=head;
-	curAccount = node;
-	saveData();
-
-}
-
-
-void showMenu()
-{
-	system("cls");
-	date();
-	printf("\n\n\n");
-	if (language == 1)
-	{
-		printf("\t\t||------------------------------||\n");
-		printf("\t\t||	    登录>1		||\n");
-		printf("\t\t||	    开户>2		||\n");
-		printf("\t\t||	    退出>3		||\n");
-		printf("\t\t||------------------------------||\n");
-	}
-	else if (language == 2)
-	{
-		esc();
-		system("pause");
-
-	}
-	int n;
-	scanf_s("%d", &n);
-	if (n == 1)
-	{
-		signIn();
-	}
-	else if (n == 2)
-	{
-		signUp();
-	}
-	else if (n == 3)
-	{
-		esc();
-	}
-}
-
-//加载成功返回1，否则返回0 
-
-void saveData()
-{
-	FILE* fp = fopen("D:/demo2/atm.txt", "w");
-	if (fp != NULL)
-	{
-		Account* curP = head;
-		while (curP != NULL)
-		{
-			fprintf(fp, "%s\t%s\t%f\n",curP->username, curP->password,  curP->money);
-			curP = curP->next;
-		}
-		fclose(fp);
-	}
-}
-
-void homePage()
-{
-	system("cls");
-	date();
-	printf("\n\n\n");
-	printf("**********************************************************************\n");
-	printf("*                     请根据需要选择您所需的服务                   ！*\n");
-	printf("**********************************************************************\n\n\n");
-	printf("\t\t||--------------------------------------||\n");
-	printf("\t\t||	取款>1		余额查询>4	||\n");
-	printf("\t\t||	存款>2		更改密码>5	||\n");
-	printf("\t\t||	转账>3		交易记录>6	||\n");
-	printf("\t\t||	        		退出>7	||\n");
-	printf("\t\t||--------------------------------------||\n");
-	
-	
-	int n;
-	scanf_s("%d",&n);
-	switch (n)
-	{
-	case 1: drawMoney(); break;
-	case 2: saveMoney(); break;
-	case 3:transfer(curAccount); break;
-	case 4: enquiryService(); break;
-	case 5: updatePassword(); break;
-	case 6: findeTR(curAccount); break;
-	case 7: esc(); break;
-	default:
-		break;
-	}
-}
-
+void map();
 
 int main()
 {
-	loadData();
-	loadDataTR();
-	date();
-	printf("\n\n\n");
-	printf("");
-	printf("\t\t||-----------ATM服务------------||\n");
-	printf("\t\t||	   业务办理>1		||\n");
-	printf("\t\t||	      退出>2		||\n");
-	printf("\t\t||------------------------------||\n");
-	scanf_s("%d", &language);
-	showMenu();
-	saveTR();
-	saveData();
+	
+	Account zh[100];
+
+	int i;
+	FILE *p;
+	if((p=fopen("D:\\账户.txt","a+"))==NULL)
+	{
+		printf("打开文件失败!\n");
+		exit(0);
+	}
+	fclose(p);
+	p=fopen("D:\\账户.txt","r");
+	for(i=0;i<100;i++)
+	{
+		fread(&zh[i],sizeof(Account),1,p);
+	}
+	
+	fclose(p);
+	do
+	{	
+		map();
+		int a;
+		scanf("%d",&a);
+		if(a==10)
+			break;
+		
+		switch(a)
+		{
+		case 1:
+			kaihu(zh);
+			break;
+			
+		case 2:
+			cunkuan(zh);
+			break;
+			
+		case 3:
+			qukuan(zh);
+			break;
+			
+		case 4:
+			find(zh);
+			break;
+			
+		case 5:
+			zhuanzhang(zh);
+			break;
+			
+		case 6:
+			guashi(zh);
+			break;
+			
+		case 7:
+			jiegua(zh);
+			break;
+			
+		case 8:
+			xiaohu(zh);
+			break;
+			
+		case 9:
+			gaimi(zh);
+			break;
+			
+		default :
+			printf("没有此项操作!\n");
+			break;
+		}
+		
+	}while(1);
+	
 	return 0;
 }
 
+void map()
+{
+	printf("------------------------------------\n");
+	printf("1.开户  2.存款  3.取款  4.查询  5.转账     \n");
+	printf("6.挂失  7.解挂  8.销户  9.改密  10.退出系统\n");
+	printf("------------------------------------\n");
+	printf("输入你想要的进行的操作:");
+}
+
+void kaihu(Account *arr)    //开户
+{
+	
+	int index=10000,i,n;
+	
+	for(i=0;i<100;i++)
+	{
+		if(strlen(arr[i].name)>=40)
+		{
+			break;
+		}
+		index++;
+	}
+	
+	arr[i].num=index;
+
+	printf("账户:%d\n",(arr+i)->num);
+	printf("用户名:");
+	getchar();
+	gets((arr+i)->name);
+
+	printf("请输入6位数字密码:");
+	scanf("%d",&n);
+	
+	if(n<100000||n>999999)
+	{
+		printf("请输入6位数字密码:");
+		
+		scanf("%d",&n);
+		if(n<100000||n>999999)
+		{
+			printf("非法操作!\n");
+			return;
+		}
+	}
+	printf("确认密码:");
+	scanf("%d",&(arr+i)->password);
+
+	if(n!=(arr+i)->password)
+	{
+		printf("两次密码不一致,未成功开户!\n");
+		return;
+	}
+
+	printf("成功开户!\n");
+	(arr+i)->cash=0;
+	(arr+i)->type=0;
+	(arr+i)->num=index;
+	FILE *q;
+    q=fopen("D:\\账户.txt","w");
+	int j;
+	
+	for(j=0;j<100;j++)
+	{
+		fwrite(&arr[j],sizeof(Account),1,q);
+	}
+	
+	fclose(q);
+	
+}
+
+void cunkuan(Account *arr)
+{
+	int index,m,n;
+	double t;
+	printf("请输入账户:\n");
+	scanf("%d",&m);
+	
+	for(index=0;index<100;index++)
+	{
+		
+		if(arr[index].num==m)
+		{
+			break;
+		}
+	}
+	
+	if(index==100)
+	{
+		printf("对不起,无此账号!\n");
+		return;
+	}
+	
+	printf("请输入6位数字密码:\n");
+	scanf("%d",&n);
+	
+	if((arr+index)->password!=n)
+	{
+		printf("密码错误,请重新输入:\n");
+		scanf("%d",&n);
+		
+		if((arr+index)->password!=n)
+		{
+			printf("密码错误,请重新输入:\n");
+			scanf("%d",&n);
+			
+			if((arr+index)->password!=n)
+			{
+				return;
+			}
+		}
+	}
+	printf("户主姓名:%s\n",(arr+index)->name);
+
+	printf("请输入需要存钱金额:");
+	scanf("%lf",&t);
+
+	(arr+index)->cash+=t;
+	printf("您当前的余额为:%lf元\n",(arr+index)->cash);
+
+	FILE *q;
+                q=fopen("D:\\账户.txt","w");
+	
+	int i;
+
+	for(i=0;i<100;i++)
+	{
+		fwrite(&arr[i],sizeof(Account),1,q);
+	}
+
+	fclose(q);
+}
+
+void qukuan(Account *arr)
+{	
+	int index,m,n;
+	double t;
+	printf("请输入账户:\n");
+	scanf("%d",&m);
+	
+	for(index=0;index<100;index++)
+	{
+		if((arr+index)->num==m)
+		{
+			break;
+		}
+	}
+	
+	if(index==100)
+	{
+		printf("对不起,无此账号!\n");
+		return; 
+	}
+	
+	printf("请输入6位数字密码:\n");
+	scanf("%d",&n);
+	
+	if((arr+index)->password!=n)
+	{
+		printf("密码错误,请重新输入:\n");
+		scanf("%d",&n);
+		
+		if((arr+index)->password!=n)
+		{
+			printf("密码错误,请重新输入:\n");
+			scanf("%d",&n);
+			
+			if((arr+index)->password!=n)
+			{
+				return;
+			}
+		}
+	}
+	printf("户主姓名:%s\n",(arr+index)->name);
+	printf("请输入取款金额:");
+	scanf("%lf",&t);
+	
+	if(t>(arr+index)->cash)
+	{
+		printf("余额不足,取款失败!\n");
+		return;
+	}
+    (arr+index)->cash-=t;
+	printf("您当前的余额为:%lf元\n",(arr+index)->cash);
+	FILE *q;
+    q=fopen("D:\\账户.txt","w");
+	
+	int i;
+	for(i=0;i<100;i++)
+	{
+		fwrite(&arr[i],sizeof(Account),1,q);
+	}
+	fclose(q);
+}
+
+void find(Account *arr)
+{
+	int zh;
+	
+	printf("请输入您的账号\n");
+	
+	scanf("%d",&zh);
+	
+	for(int i=0;i<100;i++)
+	{
+		if(zh==arr[i].num)
+		{
+			break;
+		}
+	}
+	
+	if(i==100)
+	{
+		printf("未知账号\n");
+		return ;
+	}
+	
+	printf("请输入您的密码\n");
+	
+	int mima;
+	
+	scanf("%d",&mima);
+	
+	if((arr+i)->password!=mima)
+	{
+		printf("密码错误\n");
+		return ;
+	}
+	
+	printf("信息认证成功，您好: %s 先生/女士\n",(arr+i)->name);
+	
+	printf("您当前的余额为%lf\n",(arr+i)->cash);	
+}
+
+
+
+void zhuanzhang(Account *arr)
+{
+	int zh1;
+	
+	printf("请输入您的账号\n");
+	
+	scanf("%d",&zh1);
+	
+	for(int i1=0;i1<100;i1++)
+	{
+		if(zh1==arr[i1].num)
+		{
+			break;
+		}
+	}
+	
+	if(i1==100){
+		printf("未知账号\n");
+		return ;
+	}
+    
+	printf("请输入您的密码\n");
+	
+	int mima;
+	
+	scanf("%d",&mima);
+	
+	if((arr+i1)->password!=mima)
+	{
+		printf("密码错误\n");
+		return ;
+	}
+	
+	printf("信息认证成功，您好: %s 先生/女士\n",(arr+i1)->name);
+	
+	printf("请输入转账的对象的账号\n");
+	
+	int zh2;
+	
+	scanf("%d",&zh2);
+	
+	for(int i2=0;i2<100;i2++)
+	{
+		if(zh2==(arr+i2)->num)
+		{
+			break;
+		}
+	}
+	
+	if(i2==100){
+		printf("未知账号\n");
+		return ;
+	}
+	
+
+	printf("请输入转账金额.\n");
+	
+	int money;
+	
+	scanf("%d",&money);
+	
+	if((arr+i1)->cash-money<0)
+	{
+		printf("对不起，您的账户余额不足\n");
+		return ;
+	}
+	
+                 (arr+i1)->cash-=money;
+	
+	(arr+i2)->cash+=money;
+	
+	int index=0;
+	
+	for(int x=0;x<100;x++)
+	{
+		if(strlen((arr+x)->name)>=10)
+		{
+			break;
+		}
+		index++;
+	}
+	
+	FILE *fp;            //全部写入文件
+	
+	if((fp=fopen("D://.txt","w"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int m=0;m<index;m++)
+	{
+		fwrite(&arr[m],sizeof(Account),1,fp);
+		
+	}
+	
+	fclose(fp);
+}
+
+void guashi(Account *arr)        //挂失
+{
+	
+	
+	int index=0;
+	
+	for(int x=0;x<100;x++)
+	{            //index为已经创建的用户.
+		if(strlen((arr+x)->name)>=10)
+		{
+			break;
+		}
+		index++;
+	}
+	
+	int zh;
+	
+	printf("请输入您的账号\n");
+	
+	scanf("%d",&zh);
+	
+	for(int i=0;i<100;i++)
+	{        //确认用户信息的位置，为下标;
+		if(zh==(arr+i)->num)
+		{
+			break;
+		}
+	}
+	
+	if(i==100){
+		printf("未知账号\n");
+		return ;
+	}
+	
+	printf("请输入您的密码\n");
+	
+	int mima;
+	
+	scanf("%d",&mima);
+	
+	if((arr+i)->password!=mima)
+	{
+		printf("密码错误\n");
+		return ;
+	}
+	
+	printf("信息认证成功，您好: %s 先生/女士\n",(arr+i)->name);
+	
+	printf("您确定要冻结该用户?  ( 1: 确认 ; 0: 取消)\n");
+	
+	int judge;
+	
+	scanf("%d",&judge);
+	
+	if(judge==0||judge==1)
+	{
+		
+		if(judge==0)
+		{
+			printf("已取消冻结该用户.\n");
+			return ;
+		}
+	}
+	else
+	{
+		printf("错误的操作.\n");
+		return ;
+	}
+	
+	FILE *fp;
+	
+	if((fp=fopen("D://账户.txt","w"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int m=0;m<index;m++)
+	{
+		fwrite(&arr[m],sizeof(Account),1,fp);
+		
+	}
+	
+	fclose(fp);
+	
+	printf("已冻结该用户\n");
+}
+
+void jiegua(Account *arr)      //解挂
+{
+	int index=0;
+	
+	for(int x=0;x<100;x++)
+	{            //index为已经创建的用户.
+		if(strlen((arr+x)->name)>=10)
+		{
+			break;
+		}
+		index++;
+	}
+	
+	int zh;
+	
+	printf("请输入您的账号\n");
+	
+	scanf("%d",&zh);
+	
+	for(int i=0;i<100;i++)
+	{        //确认用户信息的位置，为下标;
+		if(zh==(arr+i)->num)
+		{
+			break;
+		}
+	}
+	
+	if(i==100)
+	{
+		printf("未知账号\n");
+		return ;
+	}
+	
+	printf("请输入您的密码\n");
+	
+	int mima;
+	
+	scanf("%d",&mima);
+	
+	if((arr+i)->password!=mima)
+	{
+		printf("密码错误\n");
+		return ;
+	}
+	
+	printf("信息认证成功，您好: %s 先生/女士\n",(arr+i)->name);
+	
+	printf("您确定要解冻该用户?  ( 1: 确认 ; 0: 取消)\n");
+	
+	int judge;
+	
+	scanf("%d",&judge);
+	
+	if(judge==0||judge==1)
+	{
+		
+		if(judge==0)
+		{
+			printf("已取消解冻该用户.\n");
+			return ;
+		}
+	}
+	else{
+		printf("错误的操作.\n");
+		return ;
+	}
+	
+	//arr[i].zt=1;
+	
+	FILE *fp;
+	
+	if((fp=fopen("D://账户.txt","w"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int m=0;m<index;m++)
+	{
+		fwrite(&arr[i],sizeof(Account),1,fp);  //  每次修改信息后全部重新写入文件.
+	}
+	
+	fclose(fp);
+	
+	printf("该用户已解冻\n");
+	
+	
+}
+
+void xiaohu(Account *arr)    //销户
+{
+	int index=0;
+	
+	for(int x=0;x<100;x++)
+	{            //index为已经创建的用户.
+		if(strlen((arr+x)->name)>=10){
+			break;
+		}
+		index++;
+	}
+	
+	int zh;
+	
+	printf("请输入您的账号\n");
+	
+	scanf("%d",&zh);
+	
+	for(int i=0;i<100;i++)
+	{        //确认用户信息的位置，为下标;
+		if(zh==(arr+i)->num)
+		{
+			break;
+		}
+	}
+	
+	if(i==100)
+	{
+		printf("未知账号\n");
+		return ;
+	}
+	
+	printf("请输入您的密码\n");
+	
+	int mima;
+	
+	scanf("%d",&mima);
+	
+	if((arr+i)->password!=mima)
+	{
+		printf("密码错误\n");
+		return ;
+	}
+	
+	printf("信息认证成功，您好: %s 先生/女士\n",(arr+i)->name);
+	
+	printf("确认要注销此账户?  ( 1: 是, 0: 否)\n");
+	
+	int judge;
+	
+	scanf("%d",&judge);
+	
+	if(judge==0||judge==1)
+	{
+		
+		if(judge==0)
+		{
+			printf("已取消注销该用户.\n");
+			return ;
+		}
+	}
+	else
+	{
+		printf("错误的操作.\n");
+		return ;
+	}
+	
+	FILE *fp;
+	
+	if((fp=fopen("D://账户.txt","w"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int m1=0;m1<i;m1++)
+	{
+		fwrite(&arr[m1],sizeof(Account),1,fp);   //  写入销户账号上半部分.
+	}
+	
+	fclose(fp);
+	
+	if((fp=fopen("D://账户.txt","w"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int m2=i+1;m2<index;m2++)
+	{
+		fwrite(&arr[m2],sizeof(Account),1,fp);    //  写入销户账号下半部分.
+	}
+	
+	fclose(fp);
+	
+	if((fp=fopen("D://账户.txt","r"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int b=0;b<100;b++)
+	{
+		fread(&arr[b],sizeof(Account),1,fp);    //  重新读取文件中的信息进入数组
+	}
+	
+	fclose(fp);
+	
+	printf("已注销该用户，请重新登录.\n");
+	
+	system("pause");
+	
+	exit(0);
+}
+
+void gaimi(Account *arr)   //改密
+{
+	int index=0;
+	
+	for(int x=0;x<100;x++)
+	{            //index为已经创建的用户.
+		if(strlen((arr+x)->name)>=10)
+		{
+			break;
+		}
+		index++;
+	}
+	
+	int zh;
+	
+	printf("请输入您的账号\n");
+	
+	scanf("%d",&zh);
+	
+	for(int i=0;i<100;i++)
+	{        //确认用户信息的位置，为下标;
+		if(zh==(arr+i)->num)
+		{
+			break;
+		}
+	}
+	if(i==100)
+	{
+		printf("未知账号\n");
+		return ;
+	}
+	
+	printf("请输入您的密码\n");
+	
+	int mima;
+	
+	scanf("%d",&mima);
+	
+	if((arr+i)->password!=mima)
+	{
+		printf("密码错误\n");
+		return ;
+	}
+	
+	printf("信息认证成功，您好: %s 先生/女士\n",(arr+i)->name);
+	
+	int gmima;
+	
+	while(1){
+		
+		printf("请输入新密码(六位数)\n");
+		
+		scanf("%d",&(arr+i)->password);
+		
+		if(100000>(arr+i)->password||(arr+i)->password>=1000000)
+		{
+			printf("请输入6位数的密码\n");
+			continue;
+		}
+		
+		printf("请再次输入密码\n");
+		
+		scanf("%d",&gmima);
+		
+		if((arr+i)->password!=gmima)
+		{
+			printf("两次密码输入不同\n");
+			continue;
+		}
+		
+		break;
+		
+	}
+	
+	FILE *fp;
+	
+	if((fp=fopen("D://账户.txt","w"))==NULL)
+	{
+		printf("不能打开文件\n");
+		exit(0);
+	}
+	
+	for(int a=0;a<index;a++)
+	{
+		fwrite(&arr[a],sizeof(Account),1,fp);
+	}
+	
+	fclose(fp);
+	
+	printf("当前账号为:%d , 用户名为: , %s 密码为: %d\n",arr[i].num,arr[i].name,arr[i].password);
+}
